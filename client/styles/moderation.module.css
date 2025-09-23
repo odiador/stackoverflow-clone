@@ -16,6 +16,15 @@
   margin: 0 0 8px 0;
 }
 
+.questionText {
+  margin-bottom: 12px;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
 .meta {
   color: #666;
   font-size: 13px;

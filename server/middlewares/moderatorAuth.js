@@ -1,7 +1,24 @@
+const jwt = require('jsonwebtoken');
+const config = require('../config');
+
 const requireModerator = async (req, res, next) => {
   try {
+    // If req.user doesn't exist, verify the JWT ourselves
     if (!req.user) {
-      return res.status(401).json({ message: 'Authentication required' });
+      const token = req.headers.authorization;
+      if (!token) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      try {
+        const decodedToken = jwt.verify(token.slice(7), config.jwt.secret, {
+          algorithm: 'HS256',
+          expiresIn: config.jwt.expiry
+        });
+        req.user = decodedToken;
+      } catch (jwtError) {
+        return res.status(401).json({ message: 'Authentication invalid' });
+      }
     }
 
     if (req.user.role !== 'moderator' && req.user.role !== 'admin') {
