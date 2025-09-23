@@ -88,6 +88,17 @@ router.patch('/questions/:questionId/answers/:answerId/validate', requireModerat
 router.patch('/questions/:id/mark-solved', requireModerator, markQuestionSolved);
 
 module.exports = (app) => {
+  // Health check endpoint (outside of /api prefix)
+  app.get('/health', (req, res) => {
+    res.status(200).json({ 
+      status: 'OK', 
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+      version: process.version
+    });
+  });
+
   app.use('/api', router);
 
   app.use((req, res, next) => {

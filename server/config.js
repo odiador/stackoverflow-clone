@@ -1,5 +1,5 @@
 module.exports = {
-  port: process.env.PORT || 8080,
+  port: process.env.PORT || 8000,
   db: {
     prod: process.env.DATABASE_URL || 'mongodb://localhost/stackoverflow-clone',
     test: 'mongodb://localhost/stackoverflow-test',

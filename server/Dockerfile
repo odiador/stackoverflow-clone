@@ -14,7 +14,7 @@ RUN npm install
 COPY . .
 
 # Expose port
-EXPOSE 8080
+EXPOSE 8000
 
 # Default command
 CMD ["npm", "run", "dev"]
