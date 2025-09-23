@@ -1,16 +1,24 @@
-const { Mistral } = require('@mistralai/mistralai');
 require('dotenv').config();
 
 class AIService {
   constructor() {
-    this.client = new Mistral({
-      apiKey: process.env.MISTRAL_API_KEY
-    });
+    this.client = null;
     this.model = "mistral-large-latest";
+  }
+
+  async initClient() {
+    if (!this.client) {
+      const { Mistral } = await import('@mistralai/mistralai');
+      this.client = new Mistral({
+        apiKey: process.env.MISTRAL_API_KEY
+      });
+    }
+    return this.client;
   }
 
   async generateAnswer(question) {
     try {
+      await this.initClient();
       const prompt = this.buildPrompt(question);
       
       const response = await this.client.chat.complete({
