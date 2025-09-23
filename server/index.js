@@ -1,3 +1,9 @@
+// Polyfill for ReadableStream in older Node.js versions
+if (!globalThis.ReadableStream) {
+  const { ReadableStream } = require('web-streams-polyfill');
+  globalThis.ReadableStream = ReadableStream;
+}
+
 const app = require("./app");
 const mongoose = require("mongoose");
 const config = require("./config");
