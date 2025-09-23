@@ -19,7 +19,18 @@ const questionSchema = new Schema({
   comments: [commentSchema],
   answers: [answerSchema],
   created: { type: Date, default: Date.now },
-  views: { type: Number, default: 0 }
+  views: { type: Number, default: 0 },
+  status: { 
+    type: String, 
+    enum: ['open', 'solved', 'closed'], 
+    default: 'open' 
+  },
+  solvedBy: {
+    type: Schema.Types.ObjectId,
+    ref: 'user'
+  },
+  solvedAt: { type: Date },
+  hasAIResponse: { type: Boolean, default: false }
 });
 
 questionSchema.set('toJSON', { getters: true });
@@ -92,15 +103,13 @@ questionSchema.pre('save', function (next) {
   next();
 });
 
-questionSchema.post('save', function (doc, next) {
+questionSchema.post('save', async function (doc, next) {
   if (this.wasNew) this.vote(this.author._id, 1);
-  doc
-    .populate('author')
-    .populate('answers.author', '-role')
-    .populate('comments.author', '-role')
-    .populate('answers.comments.author', '-role')
-    .execPopulate()
-    .then(() => next());
+  await doc.populate('author');
+  await doc.populate('answers.author', '-role');
+  await doc.populate('comments.author', '-role');
+  await doc.populate('answers.comments.author', '-role');
+  next();
 });
 
 module.exports = mongoose.model('Question', questionSchema);

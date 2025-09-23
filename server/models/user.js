@@ -4,7 +4,12 @@ const Schema = mongoose.Schema;
 const userModel = new Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, required: true, default: 'user' },
+  role: { 
+    type: String, 
+    required: true, 
+    default: 'user',
+    enum: ['user', 'moderator', 'admin']
+  },
   profilePhoto: {
     type: String,
     default: function () {

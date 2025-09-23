@@ -17,6 +17,13 @@ const {
   removeQuestion
 } = require('./controllers/questions');
 const {
+  generateAIResponse,
+  validateAIResponse,
+  markQuestionSolved,
+  getPendingModerationQuestions,
+  streamAIResponse
+} = require('./controllers/moderation');
+const {
   loadAnswers,
   answerValidate,
   createAnswer,
@@ -30,6 +37,7 @@ const requireAuth = require('./middlewares/requireAuth');
 const questionAuth = require('./middlewares/questionAuth');
 const commentAuth = require('./middlewares/commentAuth');
 const answerAuth = require('./middlewares/answerAuth');
+const { requireModerator } = require('./middlewares/moderatorAuth');
 
 const router = require('express').Router();
 
@@ -71,6 +79,13 @@ router.param('comment', loadComments);
 router.post('/comment/:question/:answer?', [requireAuth, validate], createComment);
 router.delete('/comment/:question/:comment', [requireAuth, commentAuth], removeComment);
 router.delete('/comment/:question/:answer/:comment', [requireAuth, commentAuth], removeComment);
+
+// Moderation and AI routes
+router.get('/moderation/questions', requireModerator, getPendingModerationQuestions);
+router.post('/questions/:id/ai-response', requireAuth, generateAIResponse);
+router.get('/questions/:questionId/ai-stream', streamAIResponse);
+router.patch('/questions/:questionId/answers/:answerId/validate', requireModerator, validateAIResponse);
+router.patch('/questions/:id/mark-solved', requireModerator, markQuestionSolved);
 
 module.exports = (app) => {
   app.use('/api', router);

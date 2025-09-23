@@ -15,7 +15,14 @@ const FetchProvider = ({ children }) => {
 
   authAxios.interceptors.request.use(
     (config) => {
-      config.headers.Authorization = `Bearer ${authState.token}`
+      // Prefer token from authState, but fallback to localStorage in case
+      // AuthContext hasn't hydrated yet (prevents missing auth header)
+      const tokenFromState = authState && authState.token
+      const tokenFromStorage = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+      const token = tokenFromState || tokenFromStorage
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+      }
       return config
     },
     (error) => {

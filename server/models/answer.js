@@ -12,9 +12,23 @@ const answerSchema = new Schema({
   },
   created: { type: Date, default: Date.now },
   text: { type: String, required: true },
+  rawMarkdown: { type: String },
   score: { type: Number, default: 0 },
   votes: [voteSchema],
-  comments: [commentSchema]
+  comments: [commentSchema],
+  isAIGenerated: { type: Boolean, default: false },
+  aiValidationStatus: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: function() {
+      return this.isAIGenerated ? 'pending' : undefined;
+    }
+  },
+  validatedBy: {
+    type: Schema.Types.ObjectId,
+    ref: 'user'
+  },
+  validatedAt: { type: Date }
 });
 
 answerSchema.set('toJSON', { getters: true });

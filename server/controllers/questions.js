@@ -1,6 +1,8 @@
 const Question = require('../models/question');
+const marked = require('marked');
 const User = require('../models/user');
 const { body, validationResult } = require('express-validator');
+const { autoGenerateAIResponse } = require('./moderation');
 
 exports.loadQuestions = async (req, res, next, id) => {
   try {
@@ -30,6 +32,12 @@ exports.createQuestion = async (req, res, next) => {
       tags,
       text
     });
+    
+    // Auto-generar respuesta de IA en background (sin esperar)
+    setImmediate(() => {
+      autoGenerateAIResponse(question._id);
+    });
+    
     res.status(201).json(question);
   } catch (error) {
     next(error);
@@ -44,6 +52,23 @@ exports.show = async (req, res, next) => {
       { $inc: { views: 1 } },
       { new: true }
     ).populate('answers');
+    // Convert any markdown-like answer text to HTML for client rendering
+    if (question && question.answers && question.answers.length) {
+      question.answers = question.answers.map((ans) => {
+        try {
+          const text = ans.text || '';
+          const looksLikeHtml = typeof text === 'string' && text.trim().startsWith('<');
+          const looksLikeMarkdown = typeof text === 'string' && /(^#|\*\*|`{3}|\*\s|-\s)/m.test(text);
+          if (!looksLikeHtml && looksLikeMarkdown) {
+            ans.text = marked.parse(text);
+          }
+        } catch (e) {
+          // ignore conversion errors and leave original text
+        }
+        return ans;
+      });
+    }
+
     res.json(question);
   } catch (error) {
     next(error);
@@ -84,7 +109,7 @@ exports.listByUser = async (req, res, next) => {
 
 exports.removeQuestion = async (req, res, next) => {
   try {
-    await req.question.remove();
+    await req.question.deleteOne();
     res.json({ message: 'Your question successfully deleted.' });
   } catch (error) {
     next(error);
