@@ -96,6 +96,11 @@ class AIService {
     // Por ahora, generar para todas las preguntas sin respuestas
     return question.answers.length === 0;
   }
+
+  // Helper method to get initialized client
+  async getClient() {
+    return await this.initClient();
+  }
 }
 
 module.exports = new AIService();

@@ -199,7 +199,9 @@ const autoGenerateAIResponse = async (questionId) => {
 
     // ...existing code for prompt creation...
 
-    const chatCompletion = await mistral.chat.complete({
+    // Initialize AI client and generate response
+    const client = await aiService.getClient();
+    const chatCompletion = await client.chat.complete({
       model: 'mistral-small-latest',
       messages: [{ role: 'user', content: prompt }],
       stream: false // Disable streaming for now to get complete response
@@ -271,8 +273,9 @@ const streamAIResponse = async (req, res) => {
     let fullResponse = '';
     
     try {
-      // Use the AI service
-      const chatCompletion = await aiService.client.chat.complete({
+      // Initialize and use the AI service
+      const client = await aiService.getClient();
+      const chatCompletion = await client.chat.complete({
         model: aiService.model,
         messages: [{ role: 'user', content: prompt }],
         stream: true
