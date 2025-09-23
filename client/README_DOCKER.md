@@ -18,7 +18,7 @@ docker-compose up -d
 Configura las variables en `.env`:
 
 ```
-SITE_NAME=http://localhost:8080/api
+SITE_NAME=http://localhost:8000/api
 ```
 
 ## Comandos Útiles

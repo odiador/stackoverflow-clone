@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "next",
-    "build": "next build",
+    "dev": "NODE_OPTIONS=--openssl-legacy-provider next",
+    "build": "NODE_OPTIONS=--openssl-legacy-provider next build",
     "start": "next start",
     "storybook": "start-storybook -p 6006",
     "build-storybook": "build-storybook",
