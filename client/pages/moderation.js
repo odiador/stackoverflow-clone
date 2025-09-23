@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react'
 import Head from 'next/head'
-import { marked } from 'marked'
 import Layout from '../components/layout'
 import { FetchContext } from '../store/fetch'
 import PageTitle from '../components/page-title'
@@ -9,6 +8,9 @@ import styles from '../styles/moderation.module.css'
 
 // Function to safely sanitize HTML (same as in question detail page)
 const sanitizeHTML = async (markdownText) => {
+  // Import marked dynamically
+  const { marked } = await import('marked')
+  
   // Configure marked options
   marked.setOptions({
     breaks: true,  // Enable line breaks

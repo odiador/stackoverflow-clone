@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
 import Head from 'next/head'
-import { marked } from 'marked'
 
 import { publicFetch } from '../../util/fetcher'
 
@@ -24,6 +23,9 @@ const QuestionDetail = ({ questionId, title }) => {
 
   // Function to safely sanitize HTML
   const sanitizeHTML = async (markdownText) => {
+    // Import marked dynamically
+    const { marked } = await import('marked')
+    
     // Configure marked options
     marked.setOptions({
       breaks: true,  // Enable line breaks
