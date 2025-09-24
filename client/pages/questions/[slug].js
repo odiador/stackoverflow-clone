@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import Head from 'next/head'
 
-import { publicFetch } from '../../util/fetcher'
+import { publicFetch, baseURL } from '../../util/fetcher'
 
 import Layout from '../../components/layout'
 import PageTitle from '../../components/page-title'
@@ -72,7 +72,7 @@ const QuestionDetail = ({ questionId, title }) => {
     setAiResponse('')
     
     try {
-      const eventSource = new EventSource(`/api/questions/${questionId}/ai-stream`)
+      const eventSource = new EventSource(`${baseURL}/api/questions/${questionId}/ai-stream`)
       let accumulatedMarkdown = ''
       
       eventSource.onmessage = async (event) => {
