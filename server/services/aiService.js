@@ -3,7 +3,8 @@ require('dotenv').config();
 class AIService {
   constructor() {
     this.client = null;
-    this.model = "mistral-large-latest";
+    this.model = "mistral-tiny-latest";
+    this.agent = "amaflow";
   }
 
   async initClient() {
@@ -21,6 +22,7 @@ class AIService {
       
       const response = await this.client.chat({
         model: this.model,
+        agent: this.agent,
         messages: [
           {
             role: "user",
