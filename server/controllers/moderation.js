@@ -195,16 +195,33 @@ const autoGenerateAIResponse = async (questionId) => {
     if (!question) return;
 
     const aiUser = await User.findOne({ username: 'AI_Assistant' });
-    if (!aiUser) return;
+    if (!aiUser) {
+      console.log('AI_Assistant user not found. Skipping auto-generation.');
+      return;
+    }
 
-    // ...existing code for prompt creation...
+    // Build prompt for AI
+    let prompt = `Actúa como un experto desarrollador de software. Responde la siguiente pregunta de Stack Overflow en formato Markdown.\n\n`;
+    prompt += `**Título:** ${question.title}\n\n`;
+    prompt += `**Pregunta:** ${question.text}\n\n`;
+    
+    if (question.tags && question.tags.length > 0) {
+      prompt += `**Tags:** ${question.tags.join(', ')}\n\n`;
+    }
+
+    prompt += `**Instrucciones:**\n`;
+    prompt += `- Responde en formato Markdown completo\n`;
+    prompt += `- Usa encabezados (#, ##, ###) para estructurar la respuesta\n`;
+    prompt += `- Incluye ejemplos de código usando \`\`\`javascript o el lenguaje apropiado\n`;
+    prompt += `- Usa **negrita** para términos importantes\n`;
+    prompt += `- Usa listas con - o números cuando sea apropiado\n`;
+    prompt += `- Proporciona una respuesta completa y útil\n\n`;
 
     // Initialize AI client and generate response
     const client = await aiService.getClient();
-    const chatCompletion = await client.chat.complete({
-      model: 'mistral-small-latest',
-      messages: [{ role: 'user', content: prompt }],
-      stream: false // Disable streaming for now to get complete response
+    const chatCompletion = await client.chat({
+      model: aiService.model,
+      messages: [{ role: 'user', content: prompt }]
     });
 
     let aiResponseText = chatCompletion.choices[0].message.content;
@@ -212,17 +229,22 @@ const autoGenerateAIResponse = async (questionId) => {
     // Convert markdown to HTML
     const htmlResponse = marked.parse(aiResponseText);
     
-    const answer = new Answer({
+    // Add the AI response to the question
+    question.answers.push({
       author: aiUser._id,
       text: htmlResponse, // Store as HTML
-      rawMarkdown: aiResponseText // Keep original markdown for editing
+      rawMarkdown: aiResponseText, // Keep original markdown for editing
+      isAIGenerated: true,
+      aiValidationStatus: 'pending'
     });
 
-    question.answers.push(answer);
+    question.hasAIResponse = true;
     await question.save();
     
+    console.log(`AI response generated for question ${questionId}`);
+    
   } catch (error) {
-    console.error('Error generating AI response:', error);
+    console.error('Error auto-generating AI response:', error);
   }
 };
 
@@ -275,10 +297,9 @@ const streamAIResponse = async (req, res) => {
     try {
       // Initialize and use the AI service
       const client = await aiService.getClient();
-      const chatCompletion = await client.chat.complete({
+      const chatCompletion = await client.chatStream({
         model: aiService.model,
-        messages: [{ role: 'user', content: prompt }],
-        stream: true
+        messages: [{ role: 'user', content: prompt }]
       });
 
       for await (const chunk of chatCompletion) {

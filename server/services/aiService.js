@@ -8,10 +8,8 @@ class AIService {
 
   async initClient() {
     if (!this.client) {
-      const { Mistral } = await import('@mistralai/mistralai');
-      this.client = new Mistral({
-        apiKey: process.env.MISTRAL_API_KEY
-      });
+      const MistralClient = (await import('@mistralai/mistralai')).default;
+      this.client = new MistralClient(process.env.MISTRAL_API_KEY);
     }
     return this.client;
   }
@@ -21,7 +19,7 @@ class AIService {
       await this.initClient();
       const prompt = this.buildPrompt(question);
       
-      const response = await this.client.chat.complete({
+      const response = await this.client.chat({
         model: this.model,
         messages: [
           {
@@ -100,6 +98,34 @@ class AIService {
   // Helper method to get initialized client
   async getClient() {
     return await this.initClient();
+  }
+
+  // Method for streaming responses
+  async generateAnswerStream(question, callback) {
+    try {
+      await this.initClient();
+      const prompt = this.buildPrompt(question);
+      
+      const response = await this.client.chatStream({
+        model: this.model,
+        messages: [
+          {
+            role: "user",
+            content: prompt
+          }
+        ]
+      });
+
+      for await (const chunk of response) {
+        const content = chunk.choices[0]?.delta?.content || '';
+        if (content && callback) {
+          callback(content);
+        }
+      }
+    } catch (error) {
+      console.error('Error generating streaming AI response:', error);
+      throw error;
+    }
   }
 }
 
