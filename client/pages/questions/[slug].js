@@ -72,7 +72,7 @@ const QuestionDetail = ({ questionId, title }) => {
     setAiResponse('')
     
     try {
-      const eventSource = new EventSource(`${baseURL}/api/questions/${questionId}/ai-stream`)
+      const eventSource = new EventSource(`${baseURL}/questions/${questionId}/ai-stream`)
       let accumulatedMarkdown = ''
       
       eventSource.onmessage = async (event) => {
