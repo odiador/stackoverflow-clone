@@ -221,6 +221,7 @@ const autoGenerateAIResponse = async (questionId) => {
     const client = await aiService.getClient();
     const chatCompletion = await client.chat({
       model: aiService.model,
+      agent: "amaflow",
       messages: [{ role: 'user', content: prompt }]
     });
 
@@ -299,6 +300,7 @@ const streamAIResponse = async (req, res) => {
       const client = await aiService.getClient();
       const chatCompletion = await client.chatStream({
         model: aiService.model,
+        agent: "amaflow",
         messages: [{ role: 'user', content: prompt }]
       });
 

@@ -110,6 +110,7 @@ class AIService {
       
       const response = await this.client.chatStream({
         model: this.model,
+        agent: this.agent,
         messages: [
           {
             role: "user",
