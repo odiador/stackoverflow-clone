@@ -14,6 +14,7 @@ const commentSchema = new Schema({
 commentSchema.set('toJSON', { getters: true });
 commentSchema.options.toJSON.transform = (doc, ret) => {
   const obj = { ...ret };
+  obj.id = obj._id;
   delete obj._id;
   return obj;
 };

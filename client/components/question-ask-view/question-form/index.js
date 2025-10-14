@@ -2,6 +2,7 @@ import React, { useState, useContext } from 'react'
 import { useRouter } from 'next/router'
 import { Formik } from 'formik'
 import * as Yup from 'yup'
+import slug from 'slug'
 
 import { FetchContext } from '../../../store/fetch'
 
@@ -24,11 +25,28 @@ const QuestionForm = () => {
       onSubmit={async (values, { setStatus, resetForm }) => {
         setLoading(true)
         try {
-          await authAxios.post('questions', values)
+          const { data } = await authAxios.post('questions', values)
+          console.log('Question created:', data)
+          
           resetForm({})
-          router.push('/')
+          
+          // Redirect to the question detail page where AI will auto-generate response
+          // Handle both _id (MongoDB) and id (may be transformed by Mongoose)
+          const questionId = data._id || data.id
+          
+          if (!questionId) {
+            console.error('No question ID returned from server:', data)
+            setStatus('Error: No question ID received from server')
+            setLoading(false)
+            return
+          }
+          
+          const questionSlug = `${questionId}-${slug(data.title)}`
+          console.log('Redirecting to:', questionSlug)
+          router.push('/questions/[slug]', `/questions/${questionSlug}`)
         } catch (error) {
-          setStatus(error.response.data.message)
+          console.error('Error creating question:', error)
+          setStatus(error.response?.data?.message || error.message)
         }
         setLoading(false)
       }}

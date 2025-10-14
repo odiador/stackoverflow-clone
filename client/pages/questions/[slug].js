@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useContext } from 'react'
 import Head from 'next/head'
+import { useRouter } from 'next/router'
 
 import { publicFetch, baseURL } from '../../util/fetcher'
+import { FetchContext } from '../../store/fetch'
 
 import Layout from '../../components/layout'
 import PageTitle from '../../components/page-title'
@@ -15,7 +17,15 @@ import AnswerContainer from '../../components/answer-container'
 import AddAnswer from '../../components/add-answer'
 import { Spinner } from '../../components/icons'
 
-const QuestionDetail = ({ questionId, title }) => {
+const QuestionDetail = ({ questionId: questionIdProp, title: titleProp }) => {
+  const router = useRouter()
+  const { authAxios } = useContext(FetchContext)
+  
+  // Extract questionId from router if not available in props
+  const slug = router.query.slug
+  const questionId = questionIdProp || (slug ? slug.split('-').shift() : null)
+  const title = titleProp || (slug ? slug.substr(slug.indexOf('-') + 1).split('-').join(' ') : '')
+  
   const [question, setQuestion] = useState(null)
   const [answerSortType, setAnswersSortType] = useState('Votes')
   const [aiResponse, setAiResponse] = useState('')
@@ -59,13 +69,51 @@ const QuestionDetail = ({ questionId, title }) => {
   }
 
   useEffect(() => {
+    // Don't fetch if questionId is not available
+    if (!questionId) return
+    
     const fetchQuestion = async () => {
-      const { data } = await publicFetch.get(`/question/${questionId}`)
-      setQuestion(data)
+      try {
+        const { data } = await publicFetch.get(`/question/${questionId}`)
+        setQuestion(data)
+      } catch (error) {
+        console.error('Error fetching question:', error)
+      }
     }
 
     fetchQuestion()
-  }, [])
+    
+    // Poll for AI responses for the first 30 seconds after page load
+    // This helps catch auto-generated AI responses when questions are newly created
+    let pollCount = 0
+    const maxPolls = 15 // Poll for 30 seconds (15 polls x 2 seconds)
+    
+    const pollInterval = setInterval(async () => {
+      pollCount++
+      
+      if (pollCount >= maxPolls) {
+        clearInterval(pollInterval)
+        return
+      }
+      
+      try {
+        const { data } = await publicFetch.get(`/question/${questionId}`)
+        setQuestion(data)
+        
+        // Stop polling if we detect an AI response
+        const hasAIResponse = data.answers?.some(answer => answer.isAIGenerated)
+        if (hasAIResponse) {
+          clearInterval(pollInterval)
+        }
+      } catch (error) {
+        console.error('Error polling for updates:', error)
+        // Stop polling if there's a persistent error
+        clearInterval(pollInterval)
+      }
+    }, 2000) // Poll every 2 seconds
+    
+    return () => clearInterval(pollInterval)
+  }, [questionId])
 
   const streamAIResponse = async (questionId) => {
     setIsAiGenerating(true)
@@ -107,6 +155,35 @@ const QuestionDetail = ({ questionId, title }) => {
     } catch (error) {
       console.error('Error starting AI stream:', error)
       setIsAiGenerating(false)
+    }
+  }
+
+  const generateAndSaveAIResponse = async (questionId) => {
+    setIsAiGenerating(true)
+    setAiResponse('')
+    
+    try {
+      // Call the endpoint that saves the AI response with AI_Assistant account
+      // Using authAxios because the endpoint requires authentication
+      const { data } = await authAxios.post(`/questions/${questionId}/ai-response`)
+      
+      if (data.message) {
+        console.log(data.message)
+      }
+      
+      // Reload the question to show the new answer
+      const updatedQuestion = await publicFetch.get(`/question/${questionId}`)
+      setQuestion(updatedQuestion.data)
+      
+      setIsAiGenerating(false)
+      
+      // Show success message
+      setAiResponse('✅ AI response generated and saved successfully! Check the answers below.')
+      
+    } catch (error) {
+      console.error('Error generating AI response:', error)
+      setIsAiGenerating(false)
+      setAiResponse(`❌ Error: ${error.response?.data?.message || error.message}`)
     }
   }
 
@@ -301,7 +378,7 @@ function ejemplo() {
                 <h3 style={{ margin: 0, color: '#0074cc' }}>AI Assistant Response</h3>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button
-                    onClick={() => testMarkdownResponse()}
+                    onClick={() => streamAIResponse(questionId)}
                     disabled={isAiGenerating}
                     style={{
                       padding: '8px 16px',
@@ -313,10 +390,25 @@ function ejemplo() {
                       fontSize: '14px'
                     }}
                   >
+                    {isAiGenerating ? 'Streaming...' : 'AI Stream (Preview)'}
+                  </button>
+                  <button
+                    onClick={() => testMarkdownResponse()}
+                    disabled={isAiGenerating}
+                    style={{
+                      padding: '8px 16px',
+                      backgroundColor: isAiGenerating ? '#ccc' : '#6c757d',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: isAiGenerating ? 'not-allowed' : 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
                     {isAiGenerating ? 'Testing...' : 'Test Markdown'}
                   </button>
                   <button
-                    onClick={() => streamAIResponse(questionId)}
+                    onClick={() => generateAndSaveAIResponse(questionId)}
                     disabled={isAiGenerating}
                     style={{
                       padding: '8px 16px',
@@ -324,7 +416,8 @@ function ejemplo() {
                       color: 'white',
                       border: 'none',
                       borderRadius: '4px',
-                      cursor: isAiGenerating ? 'not-allowed' : 'pointer'
+                      cursor: isAiGenerating ? 'not-allowed' : 'pointer',
+                      fontWeight: 'bold'
                     }}
                   >
                     {isAiGenerating ? 'Generating...' : 'Get AI Response'}

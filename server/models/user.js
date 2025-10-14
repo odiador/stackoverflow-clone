@@ -22,6 +22,7 @@ const userModel = new Schema({
 userModel.set('toJSON', { getters: true });
 userModel.options.toJSON.transform = (doc, ret) => {
   const obj = { ...ret };
+  obj.id = obj._id;
   delete obj._id;
   delete obj.__v;
   delete obj.password;

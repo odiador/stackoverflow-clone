@@ -37,6 +37,7 @@ questionSchema.set('toJSON', { getters: true });
 
 questionSchema.options.toJSON.transform = (doc, ret) => {
   const obj = { ...ret };
+  obj.id = obj._id;
   delete obj._id;
   delete obj.__v;
   return obj;
